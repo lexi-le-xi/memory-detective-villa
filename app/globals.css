@@ -48,11 +48,9 @@ button { cursor: pointer; }
 .relation-person.victim { border-color: #a34a43; background: #321e1d; }
 .relation-avatar { width: 48px; height: 54px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #ad9a7d; font-size: 26px; }
 .relation-person b,.relation-person span { display:block; }.relation-person b { font-size:19px; }.relation-person span { margin-top:3px; color:#d9c49f; font:11px/1.35 Arial,sans-serif; }.relation-person p { margin:7px 0 0; color:#aaa095; font:11px/1.45 Arial,sans-serif; }
-.relation-person em { position:absolute; padding:3px 7px; color:#f0c979; background:#151313; border:1px solid #6b5639; font:normal 10px Arial,sans-serif; white-space:nowrap; }
-.relation-felix { left:50%; top:50%; transform:translate(-50%,-50%); }.relation-amy { left:0; top:3%; }.relation-coco { right:0; top:3%; }.relation-ben { left:0; bottom:2%; }.relation-dean { left:50%; bottom:0; transform:translateX(-50%); }.relation-ella { right:0; bottom:2%; }
-.relation-amy em,.relation-ben em { left:100%; top:50%; margin-left:15px; }.relation-coco em,.relation-ella em { right:100%; top:50%; margin-right:15px; }.relation-dean em { bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:13px; }
+.relation-felix { left:50%; top:50%; transform:translate(-50%,-50%); }.relation-amy { left:0; top:0; }.relation-coco { left:0; top:50%; transform:translateY(-50%); }.relation-ben { left:0; bottom:0; }.relation-dean { right:0; top:18%; }.relation-ella { right:0; bottom:18%; }
 .relation-line { position:absolute; z-index:1; left:50%; top:50%; height:1px; background:#856e4e; transform-origin:left center; opacity:.75; }
-.line-amy { width:360px; transform:rotate(216deg); }.line-coco { width:360px; transform:rotate(324deg); }.line-ben { width:360px; transform:rotate(144deg); }.line-dean { width:210px; transform:rotate(90deg); }.line-ella { width:360px; transform:rotate(36deg); }
+.line-amy { width:370px; transform:rotate(222deg); }.line-coco { width:350px; transform:rotate(180deg); }.line-ben { width:370px; transform:rotate(138deg); }.line-dean { width:365px; transform:rotate(338deg); }.line-ella { width:365px; transform:rotate(22deg); }
 .profile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .profile-card { min-height: 152px; display: flex; gap: 18px; padding: 18px; background: #211d1b; border: 1px solid #50453a; }
 .profile-card.victim { border-color: #8e4943; background: linear-gradient(120deg, #2b1c1c, #211d1b 70%); }

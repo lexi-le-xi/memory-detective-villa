@@ -500,7 +500,6 @@ function RelationshipProfiles({ lang }: { lang: Lang }) {
         {others.map(profile => <article className={`relation-person relation-${profile.id}`} key={profile.id}>
           <div className="relation-avatar" style={{background:profile.color}}>{profile.name[0]}</div>
           <div><b>{profile.name}</b><span>{profile[lang].role}</span><p>{profile[lang].note}</p></div>
-          <em>{profile[lang].relation}</em>
         </article>)}
       </div>
     </section>
