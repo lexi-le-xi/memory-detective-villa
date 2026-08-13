@@ -63,6 +63,8 @@ button { cursor: pointer; }
 .header-actions .restart-button:hover { color: #fff1db; border-color: #a23f39; }
 .header-actions .profiles-button { color: #f0d8aa; border-color: #9a7744; }
 .header-actions .profiles-button:hover { background: #4a3825; }
+.header-actions .music-button { color: #f2ddb5; border-color: #8e7044; background: #32281d; }
+.header-actions .music-button:hover { background: #4a3825; }
 .map-shell { width: min(1180px, 100%); aspect-ratio: 16/10; max-height: calc(100vh - 145px); max-height: calc(100dvh - 145px); margin: auto; position: relative; border: 1px solid #5f5243; background: #141211; box-shadow: 0 24px 60px rgba(0,0,0,.55); overflow: hidden; }
 .mansion-map { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
 .three-shell { background: #30292a; cursor: crosshair; image-rendering: pixelated; }

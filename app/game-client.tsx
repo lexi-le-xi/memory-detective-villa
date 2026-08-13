@@ -826,6 +826,23 @@ export default function GameClient() {
   const [boardOpen, setBoardOpen] = useState(false);
   const [result, setResult] = useState<"good" | "bad" | null>(null);
   const [toast, setToast] = useState("");
+  const [musicOn, setMusicOn] = useState(false);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
+  const startMusic = useCallback(() => {
+    if (!musicRef.current) {
+      const audio = new Audio(`${import.meta.env.BASE_URL}audio/villa-background.mp3`);
+      audio.loop = true;
+      audio.volume = 0.32;
+      musicRef.current = audio;
+    }
+    void musicRef.current.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
+  }, []);
+
+  const toggleMusic = useCallback(() => {
+    if (!musicRef.current || musicRef.current.paused) startMusic();
+    else { musicRef.current.pause(); setMusicOn(false); }
+  }, [startMusic]);
 
   const setPlayer = useCallback((p: Point) => setPlayerState(p), []);
 
@@ -850,6 +867,8 @@ export default function GameClient() {
   useEffect(() => {
     localStorage.setItem("case07-save", JSON.stringify({ found, talked, memoriesDone }));
   }, [found, talked, memoriesDone]);
+
+  useEffect(() => () => { musicRef.current?.pause(); }, []);
 
   const restartGame = useCallback(() => {
     localStorage.removeItem("case07-save");
@@ -943,7 +962,7 @@ export default function GameClient() {
             })}
           </div>
           <div className="profiles-actions">
-            <button className="primary-button large" onClick={() => { setProfilesOpen(false); setStarted(true); }}>{ui[lang].enterAfterProfiles}</button>
+            <button className="primary-button large" onClick={() => { startMusic(); setProfilesOpen(false); setStarted(true); }}>{ui[lang].enterAfterProfiles}</button>
           </div>
         </section>
       </main>
@@ -978,6 +997,7 @@ export default function GameClient() {
           <span>{ui[lang].evidence} {found.length}/{clues.length}</span>
           <span>{ui[lang].witnesses} {talked.length}/5</span>
           <span>{ui[lang].memories} {memoriesDone.length}/6</span>
+          <button className="music-button" onClick={toggleMusic} aria-pressed={musicOn}>{musicOn ? (lang === "zh" ? "♫ 音乐开" : "♫ Music On") : (lang === "zh" ? "♫ 音乐关" : "♫ Music Off")}</button>
           <button className="restart-button" onClick={restartGame}>{ui[lang].restart}</button>
         </div>
       </header>
