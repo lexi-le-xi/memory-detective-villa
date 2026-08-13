@@ -8,7 +8,9 @@ type Lang = "zh" | "en";
 type Point = { x: number; y: number };
 type Actor = Point & { id: string; name: string; room: string; color: string; floor: Floor };
 type Clue = Point & { id: string; name: string; detail: string; floor: Floor };
-type Dialogue = { speaker: string; text: string; follow?: string };
+type DialogueLine = { speaker: string; text: string; follow?: string };
+type Question = { id: string; prompt: string; response: DialogueLine[] };
+type SuspectDialogue = { opening: DialogueLine; questions: Question[] };
 
 const MAP_W = 960;
 const MAP_H = 600;
@@ -60,27 +62,145 @@ function isClueAvailable(id: string, found: string[], talked: string[]): boolean
   return true;
 }
 
-const dialogue: Record<string, Dialogue[]> = {
-  amy: [
-    { speaker: "Amy", text: "我大概21:50经过主卧，然后就回客厅了。我从没碰过那杯牛奶。", follow: "奇怪：你还没有问她牛奶是否被下药。" },
-    { speaker: "Amy", text: "厨房谁都能进。你应该先问负责准备牛奶的Ella。" },
-  ],
-  coco: [
-    { speaker: "Coco", text: "22:00到22:30我一直在客厅和Dean说话，一次都没上楼。", follow: "她把整个不在场证明都压在Dean身上。" },
-    { speaker: "Coco", text: "窗帘？我几周没进过Felix的房间了。" },
-  ],
-  dean: [
-    { speaker: "Dean", text: "我和Coco一直在客厅。22:30我照常巡查，房里很安静。" },
-    { speaker: "Dean", text: "监控设备很旧。重复画面不一定代表有人篡改。", follow: "他说话时看了一眼洗衣房方向。" },
-  ],
-  ben: [
-    { speaker: "Ben", text: "22:18左右我经过主卧。里面没开灯，但一直有翻报纸的声音。" },
-    { speaker: "Ben", text: "我没有敲门。我欠Felix钱……我只是怕见他。", follow: "黑暗中无法读报，声音可能是伪造的。" },
-  ],
-  ella: [
-    { speaker: "Ella", text: "我21:45开始热牛奶，22:00送进主卧。中途去储藏室拿过托盘。" },
-    { speaker: "Ella", text: "回来时我看见一个灰绿色袖口从餐厅侧门闪过去。", follow: "Amy今晚穿着灰绿色外套。" },
-  ],
+const dialogue: Record<string, SuspectDialogue> = {
+  amy: {
+    opening: { speaker: "Amy", text: "有什么事吗？我今晚已经被问过一遍了。" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "21:50左右你在哪里？",
+        response: [
+          { speaker: "Amy", text: "我大概21:50经过主卧，然后就回客厅了。我从没碰过那杯牛奶。" },
+          { speaker: "Amy", text: "22点之后我就没上过二楼，一步都没有。" },
+        ],
+      },
+      {
+        id: "milk",
+        prompt: "牛奶的事呢？",
+        response: [
+          { speaker: "Amy", text: "……（停顿）我不知道，反正我没碰过牛奶，我跟那杯牛奶一点关系都没有。", follow: "奇怪：你还没问她牛奶是否被下药，她却主动否认了。" },
+          { speaker: "Amy", text: "厨房谁都能进。你应该先问负责准备牛奶的Ella。" },
+        ],
+      },
+      {
+        id: "coco",
+        prompt: "那天晚上你见到Coco了吗？",
+        response: [
+          { speaker: "Amy", text: "我们俩晚上没什么交集，她好像一直在客厅陪Dean说话吧，我没太注意。" },
+        ],
+      },
+    ],
+  },
+  coco: {
+    opening: { speaker: "Coco", text: "还要问多久？我已经说过好几遍了。" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "22:00到22:30之间你在哪里？",
+        response: [
+          { speaker: "Coco", text: "我在客厅，一直和Dean聊天。就是随便聊聊。" },
+          { speaker: "Coco", text: "没有，一次都没有。我整晚都没上过楼。", follow: "她把整个不在场证明都压在Dean身上。" },
+        ],
+      },
+      {
+        id: "leave-room",
+        prompt: "你有没有离开过客厅，哪怕一下？",
+        response: [
+          { speaker: "Coco", text: "没有那种事，我一直在那，你可以问Dean。" },
+        ],
+      },
+      {
+        id: "curtains",
+        prompt: "最近碰过他卧室的窗帘吗？",
+        response: [
+          { speaker: "Coco", text: "（语气略带防备）我为什么要碰那个？我都好几周没进过他房间了。" },
+        ],
+      },
+    ],
+  },
+  dean: {
+    opening: { speaker: "Dean", text: "警官，需要我做什么吗？" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "22:00到22:30之间你在哪里？",
+        response: [
+          { speaker: "Dean", text: "我在客厅，和Coco在一起，我们聊了挺久。" },
+          { speaker: "Dean", text: "没有，我们俩一直都在那。" },
+        ],
+      },
+      {
+        id: "checked-felix",
+        prompt: "你有去看过Felix吗？",
+        response: [
+          { speaker: "Dean", text: "22:30左右我上去巡视了一下，平时都这么做。" },
+          { speaker: "Dean", text: "房间很安静，我以为他已经睡了，就没进去。" },
+        ],
+      },
+      {
+        id: "unusual",
+        prompt: "那天晚上还有什么不寻常的事吗？",
+        response: [
+          { speaker: "Dean", text: "（犹豫了一下）……没有，没什么不寻常的。就是很平常的一晚。", follow: "他说话时看了一眼洗衣房方向。" },
+        ],
+      },
+    ],
+  },
+  ben: {
+    opening: { speaker: "Ben", text: "呃……我需要坐下吗？" },
+    questions: [
+      {
+        id: "upstairs",
+        prompt: "那天晚上你有上二楼吗？",
+        response: [
+          { speaker: "Ben", text: "有，我大概22点过后上去拿了个东西，路过主卧门口的时候顺便看了一眼。" },
+          { speaker: "Ben", text: "应该是22:18左右吧，房间里黑着，没开灯。" },
+        ],
+      },
+      {
+        id: "heard",
+        prompt: "黑着灯的话，你怎么知道里面有人？",
+        response: [
+          { speaker: "Ben", text: "我听到里面有翻报纸的声音，一直在响，哗啦哗啦的，挺清楚的。", follow: "黑暗中无法读报，声音可能是伪造的。" },
+        ],
+      },
+      {
+        id: "no-knock",
+        prompt: "你为什么没有敲门？",
+        response: [
+          { speaker: "Ben", text: "就几秒钟吧，没敲门，毕竟是他生日，我也不想打扰他。" },
+          { speaker: "Ben", text: "我欠Felix钱……我只是怕见他。" },
+        ],
+      },
+    ],
+  },
+  ella: {
+    opening: { speaker: "Ella", text: "厨房那边还有事要收拾，能快点吗？" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "21:45左右你在做什么？",
+        response: [
+          { speaker: "Ella", text: "我刚打扫完二楼，下楼去厨房给Felix热牛奶。中途去储藏室拿过托盘。" },
+        ],
+      },
+      {
+        id: "unusual",
+        prompt: "下楼时有没有注意到什么不一样的？",
+        response: [
+          { speaker: "Ella", text: "楼梯那边有个人影，走得挺快的，我没看清是谁，就是很快闪过去了。" },
+          { speaker: "Ella", text: "回来时我看见一个灰绿色袖口从餐厅侧门闪过去。", follow: "Amy今晚穿着灰绿色外套。" },
+        ],
+      },
+      {
+        id: "after",
+        prompt: "送完牛奶之后你还看到谁上楼了吗？",
+        response: [
+          { speaker: "Ella", text: "没有，我没看到。我一直在厨房忙，没怎么注意楼梯那边。" },
+        ],
+      },
+    ],
+  },
 };
 
 const memoryScripts: Record<string, { title: string; tone: string; steps: [string, string, string, string][] }> = {
@@ -146,27 +266,145 @@ const memoryScripts: Record<string, { title: string; tone: string; steps: [strin
   },
 };
 
-const dialogueEn: Record<string, Dialogue[]> = {
-  amy: [
-    { speaker: "Amy", text: "I passed the master bedroom around 9:50 and went back to the living room. I never touched that milk." },
-    { speaker: "Amy", text: "Anyone could enter the kitchen. You should question the person who prepared the milk." },
-  ],
-  coco: [
-    { speaker: "Coco", text: "I was in the living room with Dean from 10:00 to 10:30. I never went upstairs." },
-    { speaker: "Coco", text: "The curtains? I haven't entered Felix's room for weeks." },
-  ],
-  dean: [
-    { speaker: "Dean", text: "Coco and I were in the living room. I made my usual patrol at 10:30. The room was quiet." },
-    { speaker: "Dean", text: "The cameras are old. Repeated footage does not necessarily mean it was altered." },
-  ],
-  ben: [
-    { speaker: "Ben", text: "I passed the bedroom around 10:18. The lights were off, but I kept hearing newspaper pages." },
-    { speaker: "Ben", text: "I didn't knock. I owed Felix money... I was afraid to face him." },
-  ],
-  ella: [
-    { speaker: "Ella", text: "I started warming the milk at 9:45 and delivered it at 10:00. I went into the pantry for a tray." },
-    { speaker: "Ella", text: "When I returned, I saw a gray-green sleeve disappear through the dining-room door." },
-  ],
+const dialogueEn: Record<string, SuspectDialogue> = {
+  amy: {
+    opening: { speaker: "Amy", text: "Is this necessary? I've already been asked once tonight." },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "Where were you around 21:50?",
+        response: [
+          { speaker: "Amy", text: "I passed the master bedroom around 21:50 and went back to the living room. I never touched that milk." },
+          { speaker: "Amy", text: "I didn't go up to the second floor at all after 22:00 — not once." },
+        ],
+      },
+      {
+        id: "milk",
+        prompt: "What about the milk?",
+        response: [
+          { speaker: "Amy", text: "...(pause) I don't know. Anyway, I never touched the milk. I had nothing to do with that cup at all.", follow: "Odd — you hadn't asked her about the milk, and she's already denying it." },
+          { speaker: "Amy", text: "Anyone could enter the kitchen. You should question the person who prepared it." },
+        ],
+      },
+      {
+        id: "coco",
+        prompt: "Did you see Coco that night?",
+        response: [
+          { speaker: "Amy", text: "We didn't really cross paths. I think she was in the living room talking with Dean — I wasn't really paying attention." },
+        ],
+      },
+    ],
+  },
+  coco: {
+    opening: { speaker: "Coco", text: "How much longer is this going to take? I've said this already." },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "Where were you between 22:00 and 22:30?",
+        response: [
+          { speaker: "Coco", text: "I was in the living room with Dean. We were just chatting." },
+          { speaker: "Coco", text: "No, not once. I didn't go upstairs at all that night.", follow: "She's resting her entire alibi on Dean." },
+        ],
+      },
+      {
+        id: "leave-room",
+        prompt: "Did you leave the room, even for a moment?",
+        response: [
+          { speaker: "Coco", text: "No, nothing like that. I was there the whole time — you can ask Dean." },
+        ],
+      },
+      {
+        id: "curtains",
+        prompt: "Have you touched the curtains in his room recently?",
+        response: [
+          { speaker: "Coco", text: "(slightly defensive) Why would I? I haven't even been in his room in weeks." },
+        ],
+      },
+    ],
+  },
+  dean: {
+    opening: { speaker: "Dean", text: "Officer. What do you need from me?" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "Where were you between 22:00 and 22:30?",
+        response: [
+          { speaker: "Dean", text: "I was in the living room, with Coco. We talked for a while." },
+          { speaker: "Dean", text: "No. We were both there the whole time." },
+        ],
+      },
+      {
+        id: "checked-felix",
+        prompt: "Did you check on Felix at any point?",
+        response: [
+          { speaker: "Dean", text: "I went up to patrol around 22:30, like I always do." },
+          { speaker: "Dean", text: "Everything was quiet. I assumed he'd gone to sleep, so I didn't go in." },
+        ],
+      },
+      {
+        id: "unusual",
+        prompt: "Anything unusual that night?",
+        response: [
+          { speaker: "Dean", text: "(hesitates) No... nothing unusual. It was a normal night.", follow: "He glanced toward the laundry room as he said that." },
+        ],
+      },
+    ],
+  },
+  ben: {
+    opening: { speaker: "Ben", text: "Uh — do I need to sit down for this?" },
+    questions: [
+      {
+        id: "upstairs",
+        prompt: "Did you go up to the second floor that night?",
+        response: [
+          { speaker: "Ben", text: "Yeah, I went up sometime after 22:00 to grab something. I glanced toward the master bedroom door on my way." },
+          { speaker: "Ben", text: "Around 22:18, I think. The room was dark, no lights on." },
+        ],
+      },
+      {
+        id: "heard",
+        prompt: "Dark? Then how did you know someone was in there?",
+        response: [
+          { speaker: "Ben", text: "I heard the sound of newspaper pages turning — it kept going, kind of a rustling sound, pretty clear.", follow: "Newspapers can't be read in the dark. That sound may have been staged." },
+        ],
+      },
+      {
+        id: "no-knock",
+        prompt: "Why didn't you knock?",
+        response: [
+          { speaker: "Ben", text: "Just a few seconds. I didn't knock — it was his birthday, I didn't want to bother him." },
+          { speaker: "Ben", text: "I owed Felix money... I was afraid to face him." },
+        ],
+      },
+    ],
+  },
+  ella: {
+    opening: { speaker: "Ella", text: "I still have things to clean up in the kitchen — can we make this quick?" },
+    questions: [
+      {
+        id: "whereabouts",
+        prompt: "What were you doing around 21:45?",
+        response: [
+          { speaker: "Ella", text: "I'd just finished cleaning the second floor, and went down to warm up milk for Felix. I went into the pantry for a tray along the way." },
+        ],
+      },
+      {
+        id: "unusual",
+        prompt: "Did you notice anything unusual on your way down?",
+        response: [
+          { speaker: "Ella", text: "There was someone near the staircase, moving pretty fast. I couldn't tell who it was." },
+          { speaker: "Ella", text: "When I came back, I saw a gray-green sleeve disappear through the dining-room door.", follow: "Amy was wearing a gray-green jacket tonight." },
+        ],
+      },
+      {
+        id: "after",
+        prompt: "Did you see anyone go upstairs after you delivered the milk?",
+        response: [
+          { speaker: "Ella", text: "No, I didn't see anyone. I was busy in the kitchen — wasn't really watching the stairs." },
+        ],
+      },
+    ],
+  },
 };
 
 const memoryScriptsEn: typeof memoryScripts = {
@@ -256,6 +494,7 @@ const ui = {
     controls: "使用方向键移动与转向 · 靠近目标按 E 或 Enter 互动", evidence: "物证", witnesses: "证人", memories: "记忆", restart: "重新开始", board: "打开案件板",
     help: "移动到目标附近，或直接点击人物 / 金色物证 / 楼梯", up: "前往二楼", down: "返回一楼", investigate: "调查", talkPrefix: "与", talkSuffix: "对话", inspectFelix: "检查Felix",
     continue: "继续询问", endTalk: "结束对话", enterMemory: "进入", replayMemory: "重看", possessiveMemory: "的记忆", exitMemory: "退出记忆", memoryRecorded: "的记忆已记录",
+    askQuestion: "你想问什么？", backToQuestions: "返回提问", asked: "已问过", endInterview: "结束询问",
     investigator: "调查员 Mara", footer: "方向键操作 · E互动 · 楼层按钮切换楼层", found: "获得物证：", caseBoard: "案件板", reconstruct: "重建别墅谋杀案", experienced: "已体验记忆",
     unknown: "未发现", keepExploring: "继续探索别墅", drugQuestion: "谁给牛奶下药？", killerQuestion: "谁实施勒杀？", roomQuestion: "密室如何形成？", choose: "请选择",
     autoLock: "门关闭后自动锁止", secret: "凶手从密道离开", inside: "死者从内部反锁", submit: "提交最终推理", needMore: "需要询问所有人、体验六段记忆并找到至少5项物证",
@@ -267,6 +506,7 @@ const ui = {
     controls: "Use the arrow keys to move and turn · Press E or Enter near a target", evidence: "Evidence", witnesses: "Witnesses", memories: "Memories", restart: "Restart", board: "Case Board",
     help: "Move near a target, or click a person, gold evidence marker, or the stairs", up: "Go Upstairs", down: "Go Downstairs", investigate: "Investigate", talkPrefix: "Talk to ", talkSuffix: "", inspectFelix: "Inspect Felix",
     continue: "Continue", endTalk: "End Conversation", enterMemory: "Enter ", replayMemory: "Replay ", possessiveMemory: "'s Memory", exitMemory: "Exit Memory", memoryRecorded: "'s memory recorded",
+    askQuestion: "What do you want to ask?", backToQuestions: "Back to questions", asked: "Asked", endInterview: "End interview",
     investigator: "Investigator Mara", footer: "Arrow keys to move · E to interact · floor button to change floors", found: "Evidence found: ", caseBoard: "CASE 07 · CASE BOARD", reconstruct: "Reconstruct the Villa Murder", experienced: "Memories viewed",
     unknown: "Undiscovered", keepExploring: "Keep exploring the villa", drugQuestion: "Who drugged the milk?", killerQuestion: "Who strangled Felix?", roomQuestion: "How was the locked room created?", choose: "Choose",
     autoLock: "The door locked automatically", secret: "The killer used a secret passage", inside: "Felix locked it from inside", submit: "Submit Final Deduction", needMore: "Question everyone, view all six memories, and find at least five pieces of evidence",
@@ -573,7 +813,13 @@ export default function GameClient() {
   const [player, setPlayerState] = useState<Point>({ x: 170, y: 410 });
   const [found, setFound] = useState<string[]>([]);
   const [talked, setTalked] = useState<string[]>([]);
-  const [dialogueOpen, setDialogueOpen] = useState<{ id: string; index: number } | null>(null);
+  const [dialogueOpen, setDialogueOpen] = useState<{
+    id: string;
+    screen: "opening" | "hub" | "response";
+    questionId?: string;
+    lineIndex: number;
+    asked: string[];
+  } | null>(null);
   const [memoryOpen, setMemoryOpen] = useState<string | null>(null);
   const [victimOpen, setVictimOpen] = useState(false);
   const [memoriesDone, setMemoriesDone] = useState<string[]>([]);
@@ -639,7 +885,7 @@ export default function GameClient() {
         setVictimOpen(true);
         return;
       }
-      setDialogueOpen({ id, index: 0 });
+      setDialogueOpen({ id, screen: "opening", lineIndex: 0, asked: [] });
       setTalked((t) => t.includes(id) ? t : [...t, id]);
       return;
     }
@@ -651,7 +897,17 @@ export default function GameClient() {
   }, [lang]);
 
   const dialogueData = lang === "zh" ? dialogue : dialogueEn;
-  const activeDialogue = dialogueOpen ? dialogueData[dialogueOpen.id][dialogueOpen.index] : null;
+  const activeSuspectDialogue = dialogueOpen ? dialogueData[dialogueOpen.id] : null;
+  const activeQuestion = dialogueOpen?.questionId && activeSuspectDialogue
+    ? activeSuspectDialogue.questions.find((q) => q.id === dialogueOpen.questionId) ?? null
+    : null;
+  const activeDialogue = dialogueOpen && activeSuspectDialogue
+    ? dialogueOpen.screen === "opening"
+      ? activeSuspectDialogue.opening
+      : dialogueOpen.screen === "response" && activeQuestion
+        ? activeQuestion.response[dialogueOpen.lineIndex]
+        : null
+    : null;
   const actor = dialogueOpen ? actors.find((a) => a.id === dialogueOpen.id) : null;
 
   // Clues not yet unlocked per clueRequirements simply aren't in the world
@@ -757,16 +1013,58 @@ export default function GameClient() {
 
       {toast && <div className="toast">{toast}</div>}
 
-      {dialogueOpen && activeDialogue && actor && (
+      {dialogueOpen && actor && activeSuspectDialogue && (
         <div className="dialogue-panel">
           <div className="portrait" style={{ background: actor.color }}>{actor.name.slice(0, 1)}</div>
           <div className="dialogue-copy">
-            <p className="speaker">{activeDialogue.speaker} · {lang === "zh" ? actor.room : ({"餐厅":"Dining Room","客厅":"Living Room","管家室":"Monitor Room","厨房":"Kitchen","二楼走廊":"Upper Hall"}[actor.room] || actor.room)}</p>
-            <p>{activeDialogue.text}</p>
-            <div className="dialogue-actions">
-              {dialogueOpen.index === dialogueData[dialogueOpen.id].length - 1 && <button className="memory-button" onClick={() => { const id = dialogueOpen.id; setDialogueOpen(null); setMemoryOpen(id); }}>{memoriesDone.includes(dialogueOpen.id) ? ui[lang].replayMemory : ui[lang].enterMemory}{actor.name}{ui[lang].possessiveMemory}</button>}
-              {dialogueOpen.index < dialogueData[dialogueOpen.id].length - 1 ? <button onClick={() => setDialogueOpen({ ...dialogueOpen, index: dialogueOpen.index + 1 })}>{ui[lang].continue}</button> : <button onClick={() => setDialogueOpen(null)}>{ui[lang].endTalk}</button>}
-            </div>
+            <p className="speaker">{actor.name} · {lang === "zh" ? actor.room : ({"餐厅":"Dining Room","客厅":"Living Room","管家室":"Monitor Room","厨房":"Kitchen","二楼走廊":"Upper Hall"}[actor.room] || actor.room)}</p>
+
+            {dialogueOpen.screen === "opening" && (
+              <>
+                <p>{activeSuspectDialogue.opening.text}</p>
+                <div className="dialogue-actions">
+                  <button onClick={() => setDialogueOpen({ ...dialogueOpen, screen: "hub" })}>{ui[lang].askQuestion}</button>
+                </div>
+              </>
+            )}
+
+            {dialogueOpen.screen === "hub" && (
+              <>
+                <p className="dialogue-prompt">{ui[lang].askQuestion}</p>
+                <div className="question-list">
+                  {activeSuspectDialogue.questions.map((q) => {
+                    const wasAsked = dialogueOpen.asked.includes(q.id);
+                    return (
+                      <button
+                        key={q.id}
+                        className={wasAsked ? "question-button asked" : "question-button"}
+                        onClick={() => setDialogueOpen({ ...dialogueOpen, screen: "response", questionId: q.id, lineIndex: 0 })}
+                      >
+                        {q.prompt}{wasAsked && <span className="asked-tag">{ui[lang].asked}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="dialogue-actions">
+                  {dialogueOpen.asked.length > 0 && (
+                    <button className="memory-button" onClick={() => { const id = dialogueOpen.id; setDialogueOpen(null); setMemoryOpen(id); }}>{memoriesDone.includes(dialogueOpen.id) ? ui[lang].replayMemory : ui[lang].enterMemory}{actor.name}{ui[lang].possessiveMemory}</button>
+                  )}
+                  <button onClick={() => setDialogueOpen(null)}>{ui[lang].endInterview}</button>
+                </div>
+              </>
+            )}
+
+            {dialogueOpen.screen === "response" && activeQuestion && activeDialogue && (
+              <>
+                <p>{activeDialogue.text}</p>
+                {activeDialogue.follow && <p className="observation">{activeDialogue.follow}</p>}
+                <div className="dialogue-actions">
+                  {dialogueOpen.lineIndex < activeQuestion.response.length - 1
+                    ? <button onClick={() => setDialogueOpen({ ...dialogueOpen, lineIndex: dialogueOpen.lineIndex + 1 })}>{ui[lang].continue}</button>
+                    : <button onClick={() => setDialogueOpen({ ...dialogueOpen, screen: "hub", questionId: undefined, lineIndex: 0, asked: dialogueOpen.asked.includes(activeQuestion.id) ? dialogueOpen.asked : [...dialogueOpen.asked, activeQuestion.id] })}>{ui[lang].backToQuestions}</button>}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

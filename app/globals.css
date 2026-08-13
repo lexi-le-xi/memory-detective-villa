@@ -118,6 +118,12 @@ kbd { color: #18120d; background: #e3d3b7; border-radius: 2px; padding: 2px 7px;
 .dialogue-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .dialogue-actions button { padding: 9px 14px; color: var(--ink); background: #29231f; border: 1px solid #675947; }
 .dialogue-actions .memory-button { background: #452a2d; border-color: #915159; }
+.dialogue-prompt { margin: 0 0 10px; color: var(--gold); font: 700 13px Arial, sans-serif; letter-spacing: .04em; }
+.question-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.question-button { text-align: left; padding: 11px 14px; color: var(--ink); background: #241f1a; border: 1px solid #5f5347; font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.question-button:hover { background: #322a22; border-color: #846d4f; }
+.question-button.asked { color: #a0937f; background: #1c1815; border-style: dashed; }
+.asked-tag { flex-shrink: 0; color: #8e816f; font: 700 10px Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
 
 .memory-screen, .modal-backdrop, .ending-screen { position: fixed; inset: 0; z-index: 50; }
 .memory-screen { display: grid; place-items: center; overflow: hidden; background: radial-gradient(circle, var(--memory-tone, #665d4d) 0, #292420 50%, #100f10 100%); }
@@ -183,6 +189,7 @@ kbd { color: #18120d; background: #e3d3b7; border-radius: 2px; padding: 2px 7px;
   .portrait { width: 56px; height: 72px; font-size: 28px; }
   .dialogue-panel { gap: 12px; padding: 14px; }
   .dialogue-copy > p:not(.speaker):not(.observation) { font-size: 15px; }
+  .question-button { padding: 9px 11px; font-size: 14px; }
   .evidence-grid, .verdict-form { grid-template-columns: 1fr; }
   .victim-observations { grid-template-columns: 1fr; }
   .victim-panel { padding: 42px 22px 22px; }
