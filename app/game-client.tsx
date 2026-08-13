@@ -491,14 +491,15 @@ const publicProfiles = [
 function RelationshipProfiles({ lang }: { lang: Lang }) {
   const felix = publicProfiles[0];
   const others = publicProfiles.slice(1);
+  const avatar = (id: string) => <div className={`relation-avatar avatar-${id}`} aria-hidden="true"><i className="avatar-hair"/><i className="avatar-face"><i className="avatar-eye left"/><i className="avatar-eye right"/><i className="avatar-nose"/><i className="avatar-mouth"/></i><i className="avatar-body"/><i className="avatar-accessory"/></div>;
   return <>
     <section className="relationship-section" aria-label={lang === "zh" ? "人物关系图" : "Relationship map"}>
       <div className="relationship-heading"><b>{lang === "zh" ? "公开人物关系" : "KNOWN RELATIONSHIPS"}</b><span>{lang === "zh" ? "调查开始前已确认" : "Confirmed before investigation"}</span></div>
       <div className="relationship-map">
         <div className="relation-line line-amy"/><div className="relation-line line-coco"/><div className="relation-line line-ben"/><div className="relation-line line-dean"/><div className="relation-line line-ella"/>
-        <article className="relation-person relation-felix victim"><div className="relation-avatar" style={{background:felix.color}}>F</div><div><b>Felix</b><span>{lang === "zh" ? "死者 · 别墅主人" : "Victim · Villa Owner"}</span><p>{felix[lang].note}</p></div></article>
+        <article className="relation-person relation-felix victim">{avatar("felix")}<div><b>Felix</b><span>{lang === "zh" ? "死者 · 别墅主人" : "Victim · Villa Owner"}</span><p>{felix[lang].note}</p></div></article>
         {others.map(profile => <article className={`relation-person relation-${profile.id}`} key={profile.id}>
-          <div className="relation-avatar" style={{background:profile.color}}>{profile.name[0]}</div>
+          {avatar(profile.id)}
           <div><b>{profile.name}</b><span>{profile[lang].role}</span><p>{profile[lang].note}</p></div>
         </article>)}
       </div>
