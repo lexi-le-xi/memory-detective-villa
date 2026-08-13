@@ -496,20 +496,14 @@ function RelationshipProfiles({ lang }: { lang: Lang }) {
       <div className="relationship-heading"><b>{lang === "zh" ? "公开人物关系" : "KNOWN RELATIONSHIPS"}</b><span>{lang === "zh" ? "调查开始前已确认" : "Confirmed before investigation"}</span></div>
       <div className="relationship-map">
         <div className="relation-line line-amy"/><div className="relation-line line-coco"/><div className="relation-line line-ben"/><div className="relation-line line-dean"/><div className="relation-line line-ella"/>
-        <article className="relation-person relation-felix victim"><div className="relation-avatar" style={{background:felix.color}}>F</div><div><b>Felix</b><span>{lang === "zh" ? "死者 · 别墅主人" : "Victim · Villa Owner"}</span></div></article>
+        <article className="relation-person relation-felix victim"><div className="relation-avatar" style={{background:felix.color}}>F</div><div><b>Felix</b><span>{lang === "zh" ? "死者 · 别墅主人" : "Victim · Villa Owner"}</span><p>{felix[lang].note}</p></div></article>
         {others.map(profile => <article className={`relation-person relation-${profile.id}`} key={profile.id}>
           <div className="relation-avatar" style={{background:profile.color}}>{profile.name[0]}</div>
-          <div><b>{profile.name}</b><span>{profile[lang].role}</span></div>
+          <div><b>{profile.name}</b><span>{profile[lang].role}</span><p>{profile[lang].note}</p></div>
           <em>{profile[lang].relation}</em>
         </article>)}
       </div>
     </section>
-    <div className="profile-grid compact">
-      {publicProfiles.map(profile => { const copy=profile[lang]; return <article className={`profile-card ${profile.id === "felix" ? "victim" : ""}`} key={profile.id}>
-        <div className="profile-mark" style={{background:profile.color}}>{profile.name[0]}</div>
-        <div className="profile-copy"><span>{copy.relation}</span><h2>{profile.name}</h2><strong>{copy.role}</strong><p>{copy.note}</p></div>
-      </article>; })}
-    </div>
   </>;
 }
 
