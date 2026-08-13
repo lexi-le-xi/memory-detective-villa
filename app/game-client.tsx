@@ -75,10 +75,10 @@ const dialogue: Record<string, SuspectDialogue> = {
         ],
       },
       {
-        id: "milk",
-        prompt: "牛奶的事呢？",
+        id: "birthday-cake",
+        prompt: "生日蛋糕好像切得很晚，那晚都准备了什么？",
         response: [
-          { speaker: "Amy", text: "……（停顿）我不知道，反正我没碰过牛奶，我跟那杯牛奶一点关系都没有。", follow: "奇怪：你还没问她牛奶是否被下药，她却主动否认了。" },
+          { speaker: "Amy", text: "……（停顿）我不知道，反正我没碰过牛奶，我跟那杯牛奶一点关系都没有。", follow: "奇怪：你只问了蛋糕，她却主动否认了牛奶——没人问起的事。" },
           { speaker: "Amy", text: "厨房谁都能进。你应该先问负责准备牛奶的Ella。" },
         ],
       },
@@ -279,10 +279,10 @@ const dialogueEn: Record<string, SuspectDialogue> = {
         ],
       },
       {
-        id: "milk",
-        prompt: "What about the milk?",
+        id: "birthday-cake",
+        prompt: "The birthday cake was cut pretty late — what was prepared that night?",
         response: [
-          { speaker: "Amy", text: "...(pause) I don't know. Anyway, I never touched the milk. I had nothing to do with that cup at all.", follow: "Odd — you hadn't asked her about the milk, and she's already denying it." },
+          { speaker: "Amy", text: "...(pause) I don't know. Anyway, I never touched the milk. I had nothing to do with that cup at all.", follow: "Odd — you only asked about the cake, and she's already denying the milk. Nobody asked about that." },
           { speaker: "Amy", text: "Anyone could enter the kitchen. You should question the person who prepared it." },
         ],
       },
