@@ -488,6 +488,31 @@ const publicProfiles = [
   },
 ] as const;
 
+function RelationshipProfiles({ lang }: { lang: Lang }) {
+  const felix = publicProfiles[0];
+  const others = publicProfiles.slice(1);
+  return <>
+    <section className="relationship-section" aria-label={lang === "zh" ? "人物关系图" : "Relationship map"}>
+      <div className="relationship-heading"><b>{lang === "zh" ? "公开人物关系" : "KNOWN RELATIONSHIPS"}</b><span>{lang === "zh" ? "调查开始前已确认" : "Confirmed before investigation"}</span></div>
+      <div className="relationship-map">
+        <div className="relation-line line-amy"/><div className="relation-line line-coco"/><div className="relation-line line-ben"/><div className="relation-line line-dean"/><div className="relation-line line-ella"/>
+        <article className="relation-person relation-felix victim"><div className="relation-avatar" style={{background:felix.color}}>F</div><div><b>Felix</b><span>{lang === "zh" ? "死者 · 别墅主人" : "Victim · Villa Owner"}</span></div></article>
+        {others.map(profile => <article className={`relation-person relation-${profile.id}`} key={profile.id}>
+          <div className="relation-avatar" style={{background:profile.color}}>{profile.name[0]}</div>
+          <div><b>{profile.name}</b><span>{profile[lang].role}</span></div>
+          <em>{profile[lang].relation}</em>
+        </article>)}
+      </div>
+    </section>
+    <div className="profile-grid compact">
+      {publicProfiles.map(profile => { const copy=profile[lang]; return <article className={`profile-card ${profile.id === "felix" ? "victim" : ""}`} key={profile.id}>
+        <div className="profile-mark" style={{background:profile.color}}>{profile.name[0]}</div>
+        <div className="profile-copy"><span>{copy.relation}</span><h2>{profile.name}</h2><strong>{copy.role}</strong><p>{copy.note}</p></div>
+      </article>; })}
+    </div>
+  </>;
+}
+
 const ui = {
   zh: {
     title: "别墅谋杀案", summary: "暴雨封锁了山路。Felix死在自动上锁的主卧里，五名仍留在别墅中的人各自隐瞒了一段记忆。", enter: "进入别墅",
@@ -945,22 +970,7 @@ export default function GameClient() {
           <p className="eyebrow">CASE 07 · {ui[lang].profilesEyebrow}</p>
           <h1 id="profiles-title">{ui[lang].profilesTitle}</h1>
           <p className="profiles-intro">{ui[lang].profilesIntro}</p>
-          <div className="profile-grid">
-            {publicProfiles.map((profile) => {
-              const copy = profile[lang];
-              return (
-                <article className={`profile-card ${profile.id === "felix" ? "victim" : ""}`} key={profile.id}>
-                  <div className="profile-mark" style={{ background: profile.color }}>{profile.name.slice(0, 1)}</div>
-                  <div className="profile-copy">
-                    <span>{ui[lang].publicRecord} · {copy.relation}</span>
-                    <h2>{profile.name}</h2>
-                    <strong>{copy.role}</strong>
-                    <p>{copy.note}</p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          <RelationshipProfiles lang={lang}/>
           <div className="profiles-actions">
             <button className="primary-button large" onClick={() => { startMusic(); setProfilesOpen(false); setStarted(true); }}>{ui[lang].enterAfterProfiles}</button>
           </div>
@@ -1011,22 +1021,7 @@ export default function GameClient() {
             <p className="eyebrow">CASE 07 · {ui[lang].profilesEyebrow}</p>
             <h1 id="profiles-modal-title">{ui[lang].profilesTitle}</h1>
             <p className="profiles-intro">{ui[lang].profilesIntro}</p>
-            <div className="profile-grid">
-              {publicProfiles.map((profile) => {
-                const copy = profile[lang];
-                return (
-                  <article className={`profile-card ${profile.id === "felix" ? "victim" : ""}`} key={profile.id}>
-                    <div className="profile-mark" style={{ background: profile.color }}>{profile.name.slice(0, 1)}</div>
-                    <div className="profile-copy">
-                      <span>{ui[lang].publicRecord} · {copy.relation}</span>
-                      <h2>{profile.name}</h2>
-                      <strong>{copy.role}</strong>
-                      <p>{copy.note}</p>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            <RelationshipProfiles lang={lang}/>
           </section>
         </div>
       )}
