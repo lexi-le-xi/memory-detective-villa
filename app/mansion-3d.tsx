@@ -240,6 +240,13 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
     box(scene, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
     const masterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
     masterHandle.position.set(1.91,1.18,.08);scene.add(masterHandle);
+    // Matching inner face, so the door remains recognizable from inside the room.
+    box(scene, [2.245, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    box(scene, [2.33, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
+    box(scene, [2.33, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    box(scene, [2.33, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    const innerMasterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
+    innerMasterHandle.position.set(2.39,1.18,.08);scene.add(innerMasterHandle);
     box(scene, [5.55, .45, -2.35], [3.8, .75, 2.15], 0x668a87); // bed
     box(scene, [5.55, 1.1, -3.25], [3.8, 1.1, .22], 0x76513e);
     box(scene, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
