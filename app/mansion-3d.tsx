@@ -182,8 +182,17 @@ function makeCharacterModel(id: string, fallbackColor: string) {
 }
 
 function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
-  const floorMesh = box(scene, [0, -.08, 0], [17.6, .16, 10.8], 0xffffff);
-  floorMesh.material = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 1, flatShading: true });
+  const addFloor = (position:[number,number,number],size:[number,number,number]) => {
+    const mesh=box(scene,position,size,0xffffff);
+    mesh.material=new THREE.MeshStandardMaterial({map:checkerTexture(),roughness:1,flatShading:true});
+  };
+  if(floor===1)addFloor([0,-.08,0],[17.6,.16,10.8]);
+  else {
+    // Three slabs leave a real opening for the upstairs stairwell.
+    addFloor([-5.05,-.08,0],[7.5,.16,10.8]);
+    addFloor([5.05,-.08,0],[7.5,.16,10.8]);
+    addFloor([0,-.08,-1.48],[2.6,.16,7.74]);
+  }
   const ceiling = box(scene, [0, 3.18, 0], [17.6, .12, 10.8], 0xd4b89b);
   ceiling.material = new THREE.MeshStandardMaterial({ color: 0xd4b89b, emissive: 0x31251e, side: THREE.BackSide, flatShading: true });
   addWall(scene, 0, -5.35, 17.8, .18); addWall(scene, 0, 5.35, 17.8, .18);
@@ -252,12 +261,12 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
     box(scene, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
     box(scene, [3.0, .9, -4.65], [1.3, 1.8, .45], 0x4b3a30); // fireplace
     box(scene, [-6.0, .45, -2.4], [3.5, .75, 2], 0x47403d); // guest bed
-    // Upstairs landing: the flight now visibly descends toward the lower floor.
-    box(scene, [-.1, .025, 3.65], [2.85, .05, 2.65], 0x211c1a);
-    for (let i = 0; i < 7; i++) box(scene, [-.1, 1.15 - i * .17, 4.55 - i * .3], [2.4, .22, .38], 0x735b43);
-    const leftRail=box(scene,[-1.42,.94,3.65],[.1,.1,2.45],0xc19a62);leftRail.rotation.x=-.5;
-    const rightRail=box(scene,[1.22,.94,3.65],[.1,.1,2.45],0xc19a62);rightRail.rotation.x=-.5;
-    for(const z of[2.65,3.65,4.65]){box(scene,[-1.42,.56,z],[.1,1.12,.1],0x8b653f);box(scene,[1.22,.56,z],[.1,1.12,.1],0x8b653f);}
+    // The top tread is flush with the landing; each following tread drops below it.
+    box(scene,[-.1,-1.36,4.08],[2.58,2.7,2.55],0x171413);
+    for(let i=0;i<8;i++)box(scene,[-.1,-.12-i*.18,2.62+i*.3],[2.4,.2,.4],0x735b43);
+    const leftRail=box(scene,[-1.38,.2,3.67],[.1,.1,2.5],0xc19a62);leftRail.rotation.x=.42;
+    const rightRail=box(scene,[1.18,.2,3.67],[.1,.1,2.5],0xc19a62);rightRail.rotation.x=.42;
+    [[2.55,.42],[3.55,.06],[4.55,-.3]].forEach(([z,y])=>{box(scene,[-1.38,y,z],[.1,.9,.1],0x8b653f);box(scene,[1.18,y,z],[.1,.9,.1],0x8b653f);});
   }
 
 }
