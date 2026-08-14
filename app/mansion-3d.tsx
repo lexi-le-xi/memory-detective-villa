@@ -233,6 +233,13 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
   } else {
     addWall(scene, -2.25, -2.6, .16, 5.5); addWall(scene, 2.15, -2.6, .16, 5.5);
     addWall(scene, 5.45, .2, 6.5, .16); addWall(scene, -5.5, .2, 6.5, .16);
+    // Make the master-bedroom entrance distinct from the surrounding wall.
+    box(scene, [2.055, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    box(scene, [1.97, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
+    box(scene, [1.97, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    box(scene, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    const masterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
+    masterHandle.position.set(1.91,1.18,.08);scene.add(masterHandle);
     box(scene, [5.55, .45, -2.35], [3.8, .75, 2.15], 0x668a87); // bed
     box(scene, [5.55, 1.1, -3.25], [3.8, 1.1, .22], 0x76513e);
     box(scene, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
@@ -254,6 +261,8 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
   const [room, setRoom] = useState("");
   const [miniPlayer, setMiniPlayer] = useState(player);
   const [miniYaw, setMiniYaw] = useState(stateRef.current.yaw);
+  const [inMasterRoom, setInMasterRoom] = useState(false);
+  const [masterLightOn, setMasterLightOn] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -310,7 +319,7 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
       }
     };
     window.addEventListener("keydown",keyDown); window.addEventListener("keyup",keyUp); renderer.domElement.addEventListener("click",click);
-    const clock = new THREE.Clock(); let frame=0; let lastPrompt=""; let lastRoom=""; let lastMapUpdate=0;
+    const clock = new THREE.Clock(); let frame=0; let lastPrompt=""; let lastRoom=""; let lastMapUpdate=0; let lastMasterRoom=false;
     const animate = () => {
       frame=requestAnimationFrame(animate); const dt=Math.min(clock.getDelta(),.04); const keys=stateRef.current.keys; const speed=2.65*dt;
       if(keys.has("arrowleft")) stateRef.current.yaw += 1.7*dt; if(keys.has("arrowright")) stateRef.current.yaw -= 1.7*dt;
@@ -318,7 +327,7 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
       const move=new THREE.Vector3(); if(keys.has("arrowup"))move.add(forward); if(keys.has("arrowdown"))move.sub(forward);
       if(move.lengthSq()){move.normalize().multiplyScalar(speed); const next=camera.position.clone().add(move); next.x=THREE.MathUtils.clamp(next.x,-8.25,8.25); next.z=THREE.MathUtils.clamp(next.z,-4.85,4.85); camera.position.copy(next);}
       camera.rotation.set(0,stateRef.current.yaw,0,"YXZ");
-      if(clock.elapsedTime-lastMapUpdate>.08){lastMapUpdate=clock.elapsedTime;const mapped=toMap(camera.position);setMiniPlayer(mapped);setMiniYaw(stateRef.current.yaw);setPlayer(mapped);}
+      if(clock.elapsedTime-lastMapUpdate>.08){lastMapUpdate=clock.elapsedTime;const mapped=toMap(camera.position);setMiniPlayer(mapped);setMiniYaw(stateRef.current.yaw);setPlayer(mapped);const nowInMaster=floor===2&&camera.position.x>2.2;if(nowInMaster!==lastMasterRoom){lastMasterRoom=nowInMaster;setInMasterRoom(nowInMaster);}}
       interactive.forEach(o=>{ if(o.userData.kind==="clue"){const marker=o.children.find(child=>child.userData.marker);if(marker){marker.rotation.y+=dt*2;marker.position.y=marker.userData.baseY+Math.sin(clock.elapsedTime*3)*.05;}} if(o.userData.kind==="stairs") o.position.y=.5+Math.sin(clock.elapsedTime*2)*.08; });
       raycaster.setFromCamera(center,camera); const hits=raycaster.intersectObjects(interactive,true); let chosen:null|THREE.Object3D=null;
       for(const hit of hits){let root:THREE.Object3D|null=hit.object;while(root&& !root.userData.kind)root=root.parent;if(root&&camera.position.distanceTo(root.position)<2.65){chosen=root;break;}}
@@ -333,6 +342,7 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
 
   return <div className="map-shell three-shell">
     <div className="three-viewport" ref={mountRef} aria-label={lang === "zh" ? `别墅${floor}楼第一人称3D探索场景` : `First-person 3D villa, floor ${floor}`} />
+    {inMasterRoom&&!masterLightOn&&<div className="master-darkness" role="dialog" aria-label={lang==="zh"?"主卧灯光已关闭":"The master-bedroom light is off"}><button onClick={()=>setMasterLightOn(true)}>{lang==="zh"?"开灯":"Turn On Light"}</button></div>}
     <div className="three-room">{room}</div><div className="crosshair" aria-hidden="true">+</div>
     <div className={`mini-map floor-${floor}`} aria-label={lang === "zh" ? `缩略地图，玩家位于${room}` : `Mini map, player in ${room}`}>
       <div className="mini-title"><span>{lang === "zh" ? "别墅平面图" : "VILLA MAP"}</span><b>{floor}F</b></div>
