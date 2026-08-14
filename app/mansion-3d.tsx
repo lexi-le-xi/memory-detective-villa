@@ -252,7 +252,12 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
     box(scene, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
     box(scene, [3.0, .9, -4.65], [1.3, 1.8, .45], 0x4b3a30); // fireplace
     box(scene, [-6.0, .45, -2.4], [3.5, .75, 2], 0x47403d); // guest bed
-    for (let i = 0; i < 7; i++) box(scene, [-.1, .13 + i * .17, 4.55 - i * .3], [2.4, .22, .38], 0x735b43);
+    // Upstairs landing: the flight now visibly descends toward the lower floor.
+    box(scene, [-.1, .025, 3.65], [2.85, .05, 2.65], 0x211c1a);
+    for (let i = 0; i < 7; i++) box(scene, [-.1, 1.15 - i * .17, 4.55 - i * .3], [2.4, .22, .38], 0x735b43);
+    const leftRail=box(scene,[-1.42,.94,3.65],[.1,.1,2.45],0xc19a62);leftRail.rotation.x=-.5;
+    const rightRail=box(scene,[1.22,.94,3.65],[.1,.1,2.45],0xc19a62);rightRail.rotation.x=-.5;
+    for(const z of[2.65,3.65,4.65]){box(scene,[-1.42,.56,z],[.1,1.12,.1],0x8b653f);box(scene,[1.22,.56,z],[.1,1.12,.1],0x8b653f);}
   }
 
 }
