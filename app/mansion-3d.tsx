@@ -19,12 +19,30 @@ const clueNamesEn: Record<string, string> = {
 const toWorld = (p: Point) => new THREE.Vector3((p.x - MAP_W / 2) / SCALE, 0, (p.y - MAP_H / 2) / SCALE);
 const toMap = (v: THREE.Vector3): Point => ({ x: v.x * SCALE + MAP_W / 2, y: v.z * SCALE + MAP_H / 2 });
 
+type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
+
 function box(scene: THREE.Scene, position: [number, number, number], size: [number, number, number], color: number, roughness = .85) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, flatShading: true }));
   mesh.position.set(...position);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   scene.add(mesh);
+  return mesh;
+}
+
+/**
+ * Same as box(), but also pushes an XZ-plane bounding box (with a small
+ * inset so grazing a corner doesn't snag) into the collider list so the
+ * player can't walk through it. Use for anything solid — walls, tables,
+ * counters, beds — but not small decor (plates, screens) that the player
+ * should be able to walk over/near without a wall-like block.
+ */
+function solidBox(scene: THREE.Scene, colliders: Collider[], position: [number, number, number], size: [number, number, number], color: number, roughness = .85) {
+  const mesh = box(scene, position, size, color, roughness);
+  const [x, , z] = position;
+  const [w, , d] = size;
+  const inset = 0.03;
+  colliders.push({ minX: x - w / 2 + inset, maxX: x + w / 2 - inset, minZ: z - d / 2 + inset, maxZ: z + d / 2 - inset });
   return mesh;
 }
 
@@ -42,8 +60,8 @@ function labelSprite(text: string, color = "#ead9bc", plain = false) {
   return sprite;
 }
 
-function addWall(scene: THREE.Scene, x: number, z: number, w: number, d: number, h = 3.1) {
-  return box(scene, [x, h / 2, z], [w, h, d], 0x987b63);
+function addWall(scene: THREE.Scene, colliders: Collider[], x: number, z: number, w: number, d: number, h = 3.1) {
+  return solidBox(scene, colliders, [x, h / 2, z], [w, h, d], 0x987b63);
 }
 
 function checkerTexture() {
@@ -181,7 +199,8 @@ function makeCharacterModel(id: string, fallbackColor: string) {
   return group;
 }
 
-function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
+function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang): Collider[] {
+  const colliders: Collider[] = [];
   const addFloor = (position:[number,number,number],size:[number,number,number]) => {
     const mesh=box(scene,position,size,0xffffff);
     mesh.material=new THREE.MeshStandardMaterial({map:checkerTexture(),roughness:1,flatShading:true});
@@ -195,27 +214,27 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
   }
   const ceiling = box(scene, [0, 3.18, 0], [17.6, .12, 10.8], 0xd4b89b);
   ceiling.material = new THREE.MeshStandardMaterial({ color: 0xd4b89b, emissive: 0x31251e, side: THREE.BackSide, flatShading: true });
-  addWall(scene, 0, -5.35, 17.8, .18); addWall(scene, 0, 5.35, 17.8, .18);
-  addWall(scene, -8.8, 0, .18, 10.8); addWall(scene, 8.8, 0, .18, 10.8);
+  addWall(scene, colliders, 0, -5.35, 17.8, .18); addWall(scene, colliders, 0, 5.35, 17.8, .18);
+  addWall(scene, colliders, -8.8, 0, .18, 10.8); addWall(scene, colliders, 8.8, 0, .18, 10.8);
 
   if (floor === 1) {
-    addWall(scene, -2.2, -3.3, .16, 4.1); addWall(scene, -2.2, 3.4, .16, 3.8);
-    addWall(scene, 3.25, -3.3, .16, 4.1); addWall(scene, 3.25, 3.45, .16, 3.7);
-    addWall(scene, -5.55, .55, 6.5, .16); addWall(scene, 5.95, .55, 5.5, .16);
-    addWall(scene, -.05, .55, 3.8, .16);
+    addWall(scene, colliders, -2.2, -3.3, .16, 4.1); addWall(scene, colliders, -2.2, 3.4, .16, 3.8);
+    addWall(scene, colliders, 3.25, -3.3, .16, 4.1); addWall(scene, colliders, 3.25, 3.45, .16, 3.7);
+    addWall(scene, colliders, -5.55, .55, 6.5, .16); addWall(scene, colliders, 5.95, .55, 5.5, .16);
+    addWall(scene, colliders, -.05, .55, 3.8, .16);
 
     // Living room: fireplace, sofas, clock, drinks.
-    box(scene, [-7.85, 1.05, -2.2], [.65, 2.1, 2.3], 0x6f4b3a);
+    solidBox(scene, colliders, [-7.85, 1.05, -2.2], [.65, 2.1, 2.3], 0x6f4b3a);
     box(scene, [-7.45, .55, -2.2], [.38, .85, 1.35], 0x2c2220);
-    box(scene, [-5.3, .46, -4.2], [3.1, .8, .75], 0x477a78);
-    box(scene, [-3.25, .46, -2.65], [.75, .8, 2.15], 0x477a78);
+    solidBox(scene, colliders, [-5.3, .46, -4.2], [3.1, .8, .75], 0x477a78);
+    solidBox(scene, colliders, [-3.25, .46, -2.65], [.75, .8, 2.15], 0x477a78);
     box(scene, [-5.2, .28, -2.7], [1.7, .45, 1.05], 0xc1774e);
-    box(scene, [-7.25, 1.15, -.15], [.55, 2.25, .42], 0x8d633f);
+    solidBox(scene, colliders, [-7.25, 1.15, -.15], [.55, 2.25, .42], 0x8d633f);
     const clockFace = new THREE.Mesh(new THREE.CircleGeometry(.2, 24), new THREE.MeshStandardMaterial({ color: 0xc4aa78 }));
     clockFace.position.set(-7.24, 1.65, -.37); clockFace.rotation.x = -Math.PI / 2; scene.add(clockFace);
 
     // Dining room: long table and six chairs.
-    box(scene, [.55, .72, -2.55], [3.7, .18, 1.35], 0xb56d45);
+    solidBox(scene, colliders, [.55, .72, -2.55], [3.7, .18, 1.35], 0xb56d45);
     [[-1,-3.65],[.1,-3.65],[1.2,-3.65],[-1,-1.45],[.1,-1.45],[1.2,-1.45]].forEach(([x,z]) => box(scene, [x,.48,z], [.55,.85,.55], 0x76513e));
     for (let i = -1; i <= 1; i++) {
       const plate = new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.025,20), new THREE.MeshStandardMaterial({color:0xc9bda5}));
@@ -223,52 +242,70 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang) {
     }
 
     // Kitchen: worktops, stove, pantry shelves.
-    box(scene, [5.9, .55, -4.55], [4.8, 1, .65], 0x6f9382);
-    box(scene, [8.05, .55, -2.25], [.65, 1, 3.8], 0x6f9382);
-    box(scene, [5.65, .55, -2.4], [2.8, 1, 1.05], 0xd5ad72);
+    solidBox(scene, colliders, [5.9, .55, -4.55], [4.8, 1, .65], 0x6f9382);
+    solidBox(scene, colliders, [8.05, .55, -2.25], [.65, 1, 3.8], 0x6f9382);
+    solidBox(scene, colliders, [5.65, .55, -2.4], [2.8, 1, 1.05], 0xd5ad72);
     box(scene, [4.1, 1.05, -4.5], [.8, .1, .55], 0x171719);
     for (let i = 0; i < 4; i++) box(scene, [7.95, .55 + i * .5, -1.05], [.48, .1, 1.1], 0x75614d);
 
-    // Foyer, grand stair and monitor room.
+    // Foyer, grand stair and monitor room. The stair mesh itself stays
+    // decorative (its footprint sits inside the foyer/monitor-room gap,
+    // and blocking it would fight with the floor-switch button's own
+    // teleport), but the inspection table and monitor console are solid.
     box(scene, [-5.6, .06, 3.1], [4.6, .05, 3.7], 0x9b4557);
     for (let i = 0; i < 7; i++) box(scene, [-.2, .13 + i * .17, 4.55 - i * .3], [2.5, .22, .38], 0x735b43);
-    box(scene, [5.8, .75, 4.45], [3.6, 1.35, .65], 0x3e342e);
+    solidBox(scene, colliders, [5.8, .75, 4.45], [3.6, 1.35, .65], 0x3e342e);
     for (let i = 0; i < 3; i++) {
       const screen = box(scene, [4.65 + i * 1.12, 1.18, 4.08], [.9, .62, .08], 0x111a1c);
       (screen.material as THREE.MeshStandardMaterial).emissive.setHex(0x152c30);
     }
     // Dean's inspection table keeps the breaker log in clear view.
-    box(scene, [6.72, .5, 1.68], [1.25, .9, .78], 0x7c5b42);
+    solidBox(scene, colliders, [6.72, .5, 1.68], [1.25, .9, .78], 0x7c5b42);
   } else {
-    addWall(scene, -2.25, -2.6, .16, 5.5); addWall(scene, 2.15, -2.6, .16, 5.5);
-    addWall(scene, 5.45, .2, 6.5, .16); addWall(scene, -5.5, .2, 6.5, .16);
+    addWall(scene, colliders, -2.25, -2.6, .16, 5.5);
+    // The full-length wall (x=2.15, z=-2.6, d=5.5, spanning z -5.35..-.15)
+    // ran straight through the master-bedroom doorway (jambs at z -1.2 and
+    // .44) — shortened to stop where the door frame begins, leaving a real
+    // gap instead of a wall the player (and the eye) can't pass through.
+    addWall(scene, colliders, 2.15, -3.275, .16, 4.15);
+    addWall(scene, colliders, 5.45, .2, 6.5, .16); addWall(scene, colliders, -5.5, .2, 6.5, .16);
     // Make the master-bedroom entrance distinct from the surrounding wall.
+    // The two center posts are the outer/inner faces of the same thin door
+    // leaf, only ~0.07 units apart — solid on both would seal the doorway,
+    // since the room boundary (x>2.2) sits right between them. Only the
+    // side jambs (the actual frame flanking the opening) are solid; the
+    // door-leaf faces and handles stay decorative.
     box(scene, [2.055, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
     box(scene, [1.97, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
-    box(scene, [1.97, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
-    box(scene, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [1.97, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
     const masterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
     masterHandle.position.set(1.91,1.18,.08);scene.add(masterHandle);
     // Matching inner face, so the door remains recognizable from inside the room.
     box(scene, [2.245, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
     box(scene, [2.33, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
-    box(scene, [2.33, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
-    box(scene, [2.33, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [2.33, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [2.33, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
     const innerMasterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
     innerMasterHandle.position.set(2.39,1.18,.08);scene.add(innerMasterHandle);
-    box(scene, [5.55, .45, -2.35], [3.8, .75, 2.15], 0x668a87); // bed
+    solidBox(scene, colliders, [5.55, .45, -2.35], [3.8, .75, 2.15], 0x668a87); // bed
     box(scene, [5.55, 1.1, -3.25], [3.8, 1.1, .22], 0x76513e);
-    box(scene, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
-    box(scene, [3.0, .9, -4.65], [1.3, 1.8, .45], 0x4b3a30); // fireplace
-    box(scene, [-6.0, .45, -2.4], [3.5, .75, 2], 0x47403d); // guest bed
-    // The top tread is flush with the landing; each following tread drops below it.
+    solidBox(scene, colliders, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
+    solidBox(scene, colliders, [3.0, .9, -4.65], [1.3, 1.8, .45], 0x4b3a30); // fireplace
+    solidBox(scene, colliders, [-6.0, .45, -2.4], [3.5, .75, 2], 0x47403d); // guest bed
+    // The top tread is flush with the landing; each following tread drops
+    // below it. Treads and the landing block stay non-solid — this is now
+    // a real descending staircase (matches the floor cutout above), and
+    // colliding with individual steps the way a wall collides would make
+    // the stairs unclimbable. Only the railings are solid.
     box(scene,[-.1,-1.36,4.08],[2.58,2.7,2.55],0x171413);
     for(let i=0;i<8;i++)box(scene,[-.1,-.12-i*.18,2.62+i*.3],[2.4,.2,.4],0x735b43);
-    const leftRail=box(scene,[-1.38,.2,3.67],[.1,.1,2.5],0xc19a62);leftRail.rotation.x=.42;
-    const rightRail=box(scene,[1.18,.2,3.67],[.1,.1,2.5],0xc19a62);rightRail.rotation.x=.42;
-    [[2.55,.42],[3.55,.06],[4.55,-.3]].forEach(([z,y])=>{box(scene,[-1.38,y,z],[.1,.9,.1],0x8b653f);box(scene,[1.18,y,z],[.1,.9,.1],0x8b653f);});
+    const leftRail=solidBox(scene,colliders,[-1.38,.2,3.67],[.1,.1,2.5],0xc19a62);leftRail.rotation.x=.42;
+    const rightRail=solidBox(scene,colliders,[1.18,.2,3.67],[.1,.1,2.5],0xc19a62);rightRail.rotation.x=.42;
+    [[2.55,.42],[3.55,.06],[4.55,-.3]].forEach(([z,y])=>{solidBox(scene,colliders,[-1.38,y,z],[.1,.9,.1],0x8b653f);solidBox(scene,colliders,[1.18,y,z],[.1,.9,.1],0x8b653f);});
   }
 
+  return colliders;
 }
 
 export default function Mansion3D({ floor, lang, player, setPlayer, actors, clues, found, onInteract, onOpenPeople, onOpenBoard, peopleLabel, boardLabel }: {
@@ -302,7 +339,28 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
     const warm = new THREE.PointLight(0xffb869, 28, 18); warm.position.set(-4, 2.35, -2.4); warm.castShadow = true; scene.add(warm);
     const cold = new THREE.PointLight(0x9fc7dc, 20, 16); cold.position.set(5.5, 2.3, 2.5); scene.add(cold);
     const hall = new THREE.PointLight(0xffd39b, 18, 13); hall.position.set(0, 2.4, 3.5); scene.add(hall);
-    buildHouse(scene, floor, lang);
+    const colliders = buildHouse(scene, floor, lang);
+    const playerRadius = 0.32;
+
+    // Resolves a proposed new position against every collider on one axis
+    // at a time (so sliding along a wall you're grazing still works,
+    // rather than movement stopping dead the instant either axis touches
+    // something).
+    const resolveAxis = (value: number, otherAxis: number, isX: boolean) => {
+      for (const c of colliders) {
+        const withinOther = isX ? (otherAxis > c.minZ - playerRadius && otherAxis < c.maxZ + playerRadius)
+          : (otherAxis > c.minX - playerRadius && otherAxis < c.maxX + playerRadius);
+        if (!withinOther) continue;
+        const min = isX ? c.minX : c.minZ;
+        const max = isX ? c.maxX : c.maxZ;
+        if (value + playerRadius > min && value - playerRadius < max) {
+          const fromBelow = Math.abs((value) - min);
+          const fromAbove = Math.abs(max - (value));
+          value = fromBelow < fromAbove ? min - playerRadius : max + playerRadius;
+        }
+      }
+      return value;
+    };
 
     const interactive: THREE.Object3D[] = [];
     actors.filter(a => a.floor === floor).forEach(actor => {
@@ -346,7 +404,14 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
       if(keys.has("arrowleft")) stateRef.current.yaw += 1.7*dt; if(keys.has("arrowright")) stateRef.current.yaw -= 1.7*dt;
       const forward=new THREE.Vector3(-Math.sin(stateRef.current.yaw),0,-Math.cos(stateRef.current.yaw));
       const move=new THREE.Vector3(); if(keys.has("arrowup"))move.add(forward); if(keys.has("arrowdown"))move.sub(forward);
-      if(move.lengthSq()){move.normalize().multiplyScalar(speed); const next=camera.position.clone().add(move); next.x=THREE.MathUtils.clamp(next.x,-8.25,8.25); next.z=THREE.MathUtils.clamp(next.z,-4.85,4.85); camera.position.copy(next);}
+      if(move.lengthSq()){
+        move.normalize().multiplyScalar(speed);
+        let nextX = THREE.MathUtils.clamp(camera.position.x + move.x, -8.25, 8.25);
+        let nextZ = THREE.MathUtils.clamp(camera.position.z + move.z, -4.85, 4.85);
+        nextX = resolveAxis(nextX, camera.position.z, true);
+        nextZ = resolveAxis(nextZ, nextX, false);
+        camera.position.x = nextX; camera.position.z = nextZ;
+      }
       camera.rotation.set(0,stateRef.current.yaw,0,"YXZ");
       if(clock.elapsedTime-lastMapUpdate>.08){lastMapUpdate=clock.elapsedTime;const mapped=toMap(camera.position);setMiniPlayer(mapped);setMiniYaw(stateRef.current.yaw);setPlayer(mapped);const nowInMaster=floor===2&&camera.position.x>2.2&&camera.position.z<.2;if(nowInMaster!==lastMasterRoom){lastMasterRoom=nowInMaster;setInMasterRoom(nowInMaster);}}
       interactive.forEach(o=>{ if(o.userData.kind==="clue"){const marker=o.children.find(child=>child.userData.marker);if(marker){marker.rotation.y+=dt*2;marker.position.y=marker.userData.baseY+Math.sin(clock.elapsedTime*3)*.05;}} if(o.userData.kind==="stairs") o.position.y=.5+Math.sin(clock.elapsedTime*2)*.08; });
