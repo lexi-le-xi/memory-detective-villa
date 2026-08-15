@@ -262,20 +262,27 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang): Collider[] {
     // Dean's inspection table keeps the breaker log in clear view.
     solidBox(scene, colliders, [6.72, .5, 1.68], [1.25, .9, .78], 0x7c5b42);
   } else {
-    addWall(scene, colliders, -2.25, -2.6, .16, 5.5); addWall(scene, colliders, 2.15, -2.6, .16, 5.5);
+    addWall(scene, colliders, -2.25, -2.6, .16, 5.5);
+    // The full-length wall (x=2.15, z=-2.6, d=5.5, spanning z -5.35..-.15)
+    // ran straight through the master-bedroom doorway (jambs at z -1.2 and
+    // .44) — shortened to stop where the door frame begins, leaving a real
+    // gap instead of a wall the player (and the eye) can't pass through.
+    addWall(scene, colliders, 2.15, -3.275, .16, 4.15);
     addWall(scene, colliders, 5.45, .2, 6.5, .16); addWall(scene, colliders, -5.5, .2, 6.5, .16);
     // Make the master-bedroom entrance distinct from the surrounding wall.
-    // Both door-frame faces are solid — the frame itself should block the
-    // player the same as any wall, even though the doorway gap between the
-    // two faces (z -.38-ish) stays walkable.
-    solidBox(scene, colliders, [2.055, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    // The two center posts are the outer/inner faces of the same thin door
+    // leaf, only ~0.07 units apart — solid on both would seal the doorway,
+    // since the room boundary (x>2.2) sits right between them. Only the
+    // side jambs (the actual frame flanking the opening) are solid; the
+    // door-leaf faces and handles stay decorative.
+    box(scene, [2.055, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
     box(scene, [1.97, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
     solidBox(scene, colliders, [1.97, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
     solidBox(scene, colliders, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
     const masterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
     masterHandle.position.set(1.91,1.18,.08);scene.add(masterHandle);
     // Matching inner face, so the door remains recognizable from inside the room.
-    solidBox(scene, colliders, [2.245, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    box(scene, [2.245, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
     box(scene, [2.33, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
     solidBox(scene, colliders, [2.33, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
     solidBox(scene, colliders, [2.33, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
