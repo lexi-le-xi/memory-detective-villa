@@ -201,8 +201,17 @@ function makeCharacterModel(id: string, fallbackColor: string) {
 
 function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang): Collider[] {
   const colliders: Collider[] = [];
-  const floorMesh = box(scene, [0, -.08, 0], [17.6, .16, 10.8], 0xffffff);
-  floorMesh.material = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 1, flatShading: true });
+  const addFloor = (position:[number,number,number],size:[number,number,number]) => {
+    const mesh=box(scene,position,size,0xffffff);
+    mesh.material=new THREE.MeshStandardMaterial({map:checkerTexture(),roughness:1,flatShading:true});
+  };
+  if(floor===1)addFloor([0,-.08,0],[17.6,.16,10.8]);
+  else {
+    // Three slabs leave a real opening for the upstairs stairwell.
+    addFloor([-5.05,-.08,0],[7.5,.16,10.8]);
+    addFloor([5.05,-.08,0],[7.5,.16,10.8]);
+    addFloor([0,-.08,-1.48],[2.6,.16,7.74]);
+  }
   const ceiling = box(scene, [0, 3.18, 0], [17.6, .12, 10.8], 0xd4b89b);
   ceiling.material = new THREE.MeshStandardMaterial({ color: 0xd4b89b, emissive: 0x31251e, side: THREE.BackSide, flatShading: true });
   addWall(scene, colliders, 0, -5.35, 17.8, .18); addWall(scene, colliders, 0, 5.35, 17.8, .18);
@@ -255,12 +264,38 @@ function buildHouse(scene: THREE.Scene, floor: Floor, lang: Lang): Collider[] {
   } else {
     addWall(scene, colliders, -2.25, -2.6, .16, 5.5); addWall(scene, colliders, 2.15, -2.6, .16, 5.5);
     addWall(scene, colliders, 5.45, .2, 6.5, .16); addWall(scene, colliders, -5.5, .2, 6.5, .16);
+    // Make the master-bedroom entrance distinct from the surrounding wall.
+    // Both door-frame faces are solid — the frame itself should block the
+    // player the same as any wall, even though the doorway gap between the
+    // two faces (z -.38-ish) stays walkable.
+    solidBox(scene, colliders, [2.055, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    box(scene, [1.97, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
+    solidBox(scene, colliders, [1.97, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [1.97, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    const masterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
+    masterHandle.position.set(1.91,1.18,.08);scene.add(masterHandle);
+    // Matching inner face, so the door remains recognizable from inside the room.
+    solidBox(scene, colliders, [2.245, 1.28, -.38], [.12, 2.48, 1.38], 0x49352d);
+    box(scene, [2.33, 2.58, -.38], [.23, .16, 1.62], 0xc19a62);
+    solidBox(scene, colliders, [2.33, 1.3, -1.13], [.23, 2.7, .14], 0xc19a62);
+    solidBox(scene, colliders, [2.33, 1.3, .37], [.23, 2.7, .14], 0xc19a62);
+    const innerMasterHandle = new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),new THREE.MeshStandardMaterial({color:0xe0b45e,emissive:0x5a3610,emissiveIntensity:.45,metalness:.45,roughness:.38}));
+    innerMasterHandle.position.set(2.39,1.18,.08);scene.add(innerMasterHandle);
     solidBox(scene, colliders, [5.55, .45, -2.35], [3.8, .75, 2.15], 0x668a87); // bed
     box(scene, [5.55, 1.1, -3.25], [3.8, 1.1, .22], 0x76513e);
     solidBox(scene, colliders, [8.25, 1.45, -2.1], [.18, 2.9, 3.7], 0x9e5268); // curtains
     solidBox(scene, colliders, [3.0, .9, -4.65], [1.3, 1.8, .45], 0x4b3a30); // fireplace
     solidBox(scene, colliders, [-6.0, .45, -2.4], [3.5, .75, 2], 0x47403d); // guest bed
-    for (let i = 0; i < 7; i++) box(scene, [-.1, .13 + i * .17, 4.55 - i * .3], [2.4, .22, .38], 0x735b43);
+    // The top tread is flush with the landing; each following tread drops
+    // below it. Treads and the landing block stay non-solid — this is now
+    // a real descending staircase (matches the floor cutout above), and
+    // colliding with individual steps the way a wall collides would make
+    // the stairs unclimbable. Only the railings are solid.
+    box(scene,[-.1,-1.36,4.08],[2.58,2.7,2.55],0x171413);
+    for(let i=0;i<8;i++)box(scene,[-.1,-.12-i*.18,2.62+i*.3],[2.4,.2,.4],0x735b43);
+    const leftRail=solidBox(scene,colliders,[-1.38,.2,3.67],[.1,.1,2.5],0xc19a62);leftRail.rotation.x=.42;
+    const rightRail=solidBox(scene,colliders,[1.18,.2,3.67],[.1,.1,2.5],0xc19a62);rightRail.rotation.x=.42;
+    [[2.55,.42],[3.55,.06],[4.55,-.3]].forEach(([z,y])=>{solidBox(scene,colliders,[-1.38,y,z],[.1,.9,.1],0x8b653f);solidBox(scene,colliders,[1.18,y,z],[.1,.9,.1],0x8b653f);});
   }
 
   return colliders;
@@ -277,6 +312,8 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
   const [room, setRoom] = useState("");
   const [miniPlayer, setMiniPlayer] = useState(player);
   const [miniYaw, setMiniYaw] = useState(stateRef.current.yaw);
+  const [inMasterRoom, setInMasterRoom] = useState(false);
+  const [masterLightOn, setMasterLightOn] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -354,7 +391,7 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
       }
     };
     window.addEventListener("keydown",keyDown); window.addEventListener("keyup",keyUp); renderer.domElement.addEventListener("click",click);
-    const clock = new THREE.Clock(); let frame=0; let lastPrompt=""; let lastRoom=""; let lastMapUpdate=0;
+    const clock = new THREE.Clock(); let frame=0; let lastPrompt=""; let lastRoom=""; let lastMapUpdate=0; let lastMasterRoom=false;
     const animate = () => {
       frame=requestAnimationFrame(animate); const dt=Math.min(clock.getDelta(),.04); const keys=stateRef.current.keys; const speed=2.65*dt;
       if(keys.has("arrowleft")) stateRef.current.yaw += 1.7*dt; if(keys.has("arrowright")) stateRef.current.yaw -= 1.7*dt;
@@ -369,14 +406,14 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
         camera.position.x = nextX; camera.position.z = nextZ;
       }
       camera.rotation.set(0,stateRef.current.yaw,0,"YXZ");
-      if(clock.elapsedTime-lastMapUpdate>.08){lastMapUpdate=clock.elapsedTime;const mapped=toMap(camera.position);setMiniPlayer(mapped);setMiniYaw(stateRef.current.yaw);setPlayer(mapped);}
+      if(clock.elapsedTime-lastMapUpdate>.08){lastMapUpdate=clock.elapsedTime;const mapped=toMap(camera.position);setMiniPlayer(mapped);setMiniYaw(stateRef.current.yaw);setPlayer(mapped);const nowInMaster=floor===2&&camera.position.x>2.2&&camera.position.z<.2;if(nowInMaster!==lastMasterRoom){lastMasterRoom=nowInMaster;setInMasterRoom(nowInMaster);}}
       interactive.forEach(o=>{ if(o.userData.kind==="clue"){const marker=o.children.find(child=>child.userData.marker);if(marker){marker.rotation.y+=dt*2;marker.position.y=marker.userData.baseY+Math.sin(clock.elapsedTime*3)*.05;}} if(o.userData.kind==="stairs") o.position.y=.5+Math.sin(clock.elapsedTime*2)*.08; });
       raycaster.setFromCamera(center,camera); const hits=raycaster.intersectObjects(interactive,true); let chosen:null|THREE.Object3D=null;
       for(const hit of hits){let root:THREE.Object3D|null=hit.object;while(root&& !root.userData.kind)root=root.parent;if(root&&camera.position.distanceTo(root.position)<2.65){chosen=root;break;}}
       if(!chosen){let best=2.0;interactive.forEach(o=>{const d=camera.position.distanceTo(o.position);if(d<best){best=d;chosen=o;}});}
       const target = chosen as THREE.Object3D | null; stateRef.current.target=target?{kind:target.userData.kind,id:target.userData.id,label:target.userData.label}:null;
       const nextPrompt=target?(lang==="zh"?`按 E 互动 · ${target.userData.label}`:`Press E · ${target.userData.label}`):""; if(nextPrompt!==lastPrompt){lastPrompt=nextPrompt;setPrompt(nextPrompt);}
-      const x=camera.position.x,z=camera.position.z; const nextRoom=floor===2?(x>2.2?(lang==="zh"?"主卧":"MASTER BEDROOM"):x<-2.2?(lang==="zh"?"客房":"GUEST ROOM"):(lang==="zh"?"二楼走廊":"UPPER HALL")):(z<.55?(x<-2.2?(lang==="zh"?"客厅":"LIVING ROOM"):x>3.25?(lang==="zh"?"厨房":"KITCHEN"):(lang==="zh"?"餐厅":"DINING ROOM")):(x<-2.2?(lang==="zh"?"门厅":"FOYER"):x>3.25?(lang==="zh"?"管家室":"MONITOR ROOM"):(lang==="zh"?"主楼梯":"GRAND STAIR"))); if(nextRoom!==lastRoom){lastRoom=nextRoom;setRoom(nextRoom);}
+      const x=camera.position.x,z=camera.position.z; const nextRoom=floor===2?(z<.2&&x>2.2?(lang==="zh"?"主卧":"MASTER BEDROOM"):z<.2&&x<-2.2?(lang==="zh"?"客房":"GUEST ROOM"):(lang==="zh"?"二楼走廊":"UPPER HALL")):(z<.55?(x<-2.2?(lang==="zh"?"客厅":"LIVING ROOM"):x>3.25?(lang==="zh"?"厨房":"KITCHEN"):(lang==="zh"?"餐厅":"DINING ROOM")):(x<-2.2?(lang==="zh"?"门厅":"FOYER"):x>3.25?(lang==="zh"?"管家室":"MONITOR ROOM"):(lang==="zh"?"主楼梯":"GRAND STAIR"))); if(nextRoom!==lastRoom){lastRoom=nextRoom;setRoom(nextRoom);}
       renderer.render(scene,camera);
     }; animate();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);renderer.domElement.removeEventListener("click",click);renderer.dispose();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();const m=o.material as THREE.Material;m.dispose();}});mount.removeChild(renderer.domElement);};
@@ -384,6 +421,7 @@ export default function Mansion3D({ floor, lang, player, setPlayer, actors, clue
 
   return <div className="map-shell three-shell">
     <div className="three-viewport" ref={mountRef} aria-label={lang === "zh" ? `别墅${floor}楼第一人称3D探索场景` : `First-person 3D villa, floor ${floor}`} />
+    {inMasterRoom&&!masterLightOn&&<div className="master-darkness" role="dialog" aria-label={lang==="zh"?"主卧灯光已关闭":"The master-bedroom light is off"}><button onClick={()=>setMasterLightOn(true)}>{lang==="zh"?"开灯":"Turn On Light"}</button></div>}
     <div className="three-room">{room}</div><div className="crosshair" aria-hidden="true">+</div>
     <div className={`mini-map floor-${floor}`} aria-label={lang === "zh" ? `缩略地图，玩家位于${room}` : `Mini map, player in ${room}`}>
       <div className="mini-title"><span>{lang === "zh" ? "别墅平面图" : "VILLA MAP"}</span><b>{floor}F</b></div>
